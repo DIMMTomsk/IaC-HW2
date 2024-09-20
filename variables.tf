@@ -17,7 +17,3 @@ variable "db_password" {
   description = "MySQL user pasword"
 }
 
-variable "srv_count" {
-  type = number
-  description = "Server Count"
-}
