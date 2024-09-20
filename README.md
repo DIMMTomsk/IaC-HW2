@@ -1,480 +1,82 @@
-Домашнее задание к занятию "Terraform как инструмент для декларативного описания инфраструктуры"
-Подготовка
-Настройка Yandex.Cloud
 
-Для выполнения ДЗ вам понадобится доступ к Yandex.Cloud (далее YC).
+IaC HW3
+........ ....... . ....... ............. ................. .... .. Terraform.
+..........
+........ ............... ........ . Yandex.Cloud
 
-Допускается использование и других облачных провайдеров, но все инструкции в данном документе будет приведены для YC.
+............ ...... .......... ......... ... .. ........ ......... .......... - ....... . .. ....... ............... ..........
 
-Так же в YC рекомендуется создать отдельный каталог для размещения ресурсов, созданных при выполнении ДЗ.
+.., ... ... ... .... .. ....... ...... ........ ......, .. .. ..... ......... ..... . ......... ........ Yandex.Cloud.
 
-Для создания каталога откройте веб-консоль управления YC https://console.cloud.yandex.ru/
+......., .......... ...., ... .......... ....... .otus. . ....... .., ........ . ... .. ...... ... .... ....... - ....... ... .stage.. . ......../....... ID .......... .........
 
-Далее в верхнем правом углу откройте список привязанных к вашей учетной записи облачных ресурсов и кликните на тот ресурс, в которым вы хотите создать дополнительных каталог - в данном примере это cloud-sablinigor2015:
+........., ....... .. .. ...... .... ......., ...... ......... ........ ...:
 
-На открывшейся странице кликните на "+ Создать каталог"
+......... ....... .......
 
-Заполните параметры нового каталога и кликните на кнопку "Создать"
+... ....... ...... ........... .......... .. ....... ....... GoLang.
 
-После создания каталога вернитесь на страницу https://console.cloud.yandex.ru/cloud?section=overview
+.......... .. ......... .. ......... .. ..... ..... ...: https://golang.org/doc/install
 
-И запомните ID каталога - оно понадобится вам при работе с манифестами терраформа. ID указан в таблице со списком каталогов в столбце Идентификатор
+............. ....... ......... .......
+.... ......
 
-Кроме ID каталога вам нужно запомнить и Идентификатор Облака - он находится в блоке "Обзор" в строке "Идентификатор". Его тоже нужно будет указывать в манифестах терраформа.
-Настройка рабочей станции
+....... ....., ........... ......... .. ....... ....... ... ...... .........-...........
 
-На рабочей станции необходимо установить следующее ПО:
+......... ........:
 
-    git: инструкция по установке https://git-scm.com/book/ru/v2/Введение-Установка-Git
-    terraform: рекомендуется использовать последнюю актуальную версию. Инструкции по установке можно найти тут: https://learn.hashicorp.com/tutorials/terraform/install-cli
-    IDE на выбор (VS Code, PyCharm и т.д.). Напоминаю, что JetBrains выдает студентам Отуса полугодовые лицензии на любой свой продукт, подробности в канале Slack-а: https://otus-devops.slack.com/archives/C02AN7J0F53/p1630683476010600
-    интерфейс командной строки Yandex.Cloud (CLI) - инструкция по установке и конфигурированию находится тут: https://cloud.yandex.ru/docs/cli/quickstart
+    ....... IP Load balancer-. . state-. ..........
+    ........... ............ .. ssh . ..... .. ........... .....
+    ........... ........... . .... ...... (... ....... ... ...........)
 
-Репозиторий для хранения кода можете использовать любой - Gitlab, Github и так далее.
+........ ......
+.......... . ............ ............
 
-Рекомендуется сразу же обратиться в Тех.поддержку YC для увеличения лимитов на кол-во создаваемых виртуальных сетей (по умолчанию, этот лимит весьма мал).
+... .......... ............ ..... .............. Go-.......... - Terratest.
 
-Создать запрос на увеличение квот можно тут https://console.cloud.yandex.ru/support?section=contact
+. ..... ...... ..... ........ .. .......... ............ .......... ............ ..... Go.
 
-Обычно, подобный запрос обрабатывается в течении часа.
-Цель работы
+. ....... Terratest .. ...... .......... ........ ....., ......... ......... .........., ......... ........... ..... . ....... ........ ......
 
-Подготовить отказоустойчивую облачную инфраструктуру для последующей установки Wordpress.
-Создание манифестов терраформа
+... ... ..... ....... ... ...... ..... ....... (. ..... .........., . ....... ....)
 
-Прежде всего создайте репозиторий в одном из облачных сервисов (Gitlab, Github, к примеру) и склонируйте его на вашу рабочую станцию.
+go test
 
-Перейдите в каталог с вашим репозиторием и создайте там директорию terraform:
+..... ......... .......... . Terratest .. ....... ..... .. ..... https://terratest.gruntwork.io/docs.
 
-mkdir terraform
+........ ... ..... .......... ...: https://github.com/gruntwork-io/terratest.
+..... .....
 
-Дополнительно создайте файл .gitignore со следующим содержимым
+....... ........ ..... ..... . ........... . ........ . ...
 
-# Created by https://www.toptal.com/developers/gitignore/api/terraform
-# Edit at https://www.toptal.com/developers/gitignore?templates=terraform
+. git switch -c ansible
+Switched to a new branch 'ansible'
 
-### Terraform ###
-# Local .terraform directories
-**/.terraform/*
+....., ...... ........ .... ...... . output-........... ...........
 
-# .tfstate files
-*.tfstate
-*.tfstate.*
-
-# Crash log files
-crash.log
-
-# Exclude all .tfvars files, which are likely to contain sentitive data, such as
-# password, private keys, and other secrets. These should not be part of version
-# control as they are data points which are potentially sensitive and subject
-# to change depending on the environment.
-#
-*.tfvars
-*.auto.tfvars
-
-# Ignore override files as they are usually used to override resources locally and so
-# are not checked in
-override.tf
-override.tf.json
-*_override.tf
-*_override.tf.json
-
-# Include override files you do wish to add to version control using negated pattern
-# !example_override.tf
-
-# Include tfplan files to ignore the plan output of command: terraform plan -out=tfplan
-# example: *tfplan*
-
-# Ignore CLI configuration files
-.terraformrc
-terraform.rc
-
-# End of https://www.toptal.com/developers/gitignore/api/terraform
-
-Обратите внимание, что файлы, содержащие значения переменных не будут отправлены в удаленный репозиторий. Это делается для того, чтобы случайно не передать туда пароли и другую секретную информацию, которая может содержаться в этих файлах.
-
-...
-*.tfvars
-*.auto.tfvars
-...
-
-Теперь давайте перейдем в каталог terraform и создадим необходимые манифесты.
-
-cd terraform
-
-Провайдер
-
-Начнем с манифеста, который будет описывать к какому облачному провайдеру мы планируем обратиться.
-
-Создадим файл provider.tf со следующим содержимым:
-
-provider "yandex" {
-  token     = var.yc_token
-  cloud_id  = var.yc_cloud
-  folder_id = var.yc_folder
-}
-
-terraform {
-  required_providers {
-    yandex = {
-      source = "yandex-cloud/yandex"
-    }
-  }
-}
-
-Здесь мы указываем, что провайдер у нас Yandex.Cloud
-
-provider "yandex" {
-...
-
-И передаем необходимые переменные для использования данного провайдера, токен, ID облака и ID каталога. Файл со значениями этих переменных мы создадим позже.
-
-Далее, в этом же файле, мы указываем дополнительный блок, который будет использовать терраформ:
-
-terraform {
-  required_providers {
-    yandex = {
-      source = "yandex-cloud/yandex"
-    }
-  }
-
-Теперь нам надо создать файл variables.tf, в которым мы опишем какие переменные мы будем использовать в наших манифестах:
-
-variable "yc_cloud" {
-  type = string
-  description = "Yandex Cloud ID"
-}
-
-variable "yc_folder" {
-  type = string
-  description = "Yandex Cloud folder"
-}
-
-variable "yc_token" {
-  type = string
-  description = "Yandex Cloud OAuth token"
-}
-
-variable "db_password" {
-  description = "MySQL user pasword"
-}
-
-А их значения мы укажем в файле wp.auto.tfvars
-Содержимое этого файла следующее (!!! Указанные ниже значения приведены для примера !!!):
-
-yc_cloud  = "b1gf5768rgabjbptan7a"
-yc_folder = "b1gb8haadbndninaj928"
-yc_token = "jlkdsflgjoisgoskljgs"
-db_password = "password"
-
-Напомню, что эти ID облака и каталога вы запомнили/записали при создании каталога в YC.
-
-Чтобы узнать ваш токен, выполните команду
-
-yc config list
-
-Если вы корректно настроили интерфейс командной строки Yandex.Cloud (CLI), согласно ссылке https://cloud.yandex.ru/docs/cli/quickstart, то, в качестве бонуса, кроме значения токена эта утилита покажет вам и ID облака и каталога.
-
-ЗАДАНИЕ СО ЗВЕЗДОЧКОЙ
-
-Общение с YC, используя токен не самый надежный и удобный способ, поэтому попробуйте перейти на использования доступа через сервисный аккаунт.
-
-Итак, на текущий момент структура вашего репозитория должна быть следующей:
-
-.
-└── terraform
-    ├── provider.tf
-    ├── variables.tf
-    └── wp.auto.tfvars
-
-И уже сейчас мы можем проинициализировать терраформ при помощи следующей команды (версия провайдера может отличаться от приведенной в примере):
-
-❯ terraform init
-
-Initializing the backend...
-
-Initializing provider plugins...
-- Finding latest version of yandex-cloud/yandex...
-- Installing yandex-cloud/yandex v0.63.0...
-- Installed yandex-cloud/yandex v0.63.0 (self-signed, key ID E40F590B50BB8E40)
-
-Partner and community providers are signed by their developers.
-If you'd like to know more about provider signing, you can read about it here:
-https://www.terraform.io/docs/cli/plugins/signing.html
-
-Terraform has created a lock file .terraform.lock.hcl to record the provider
-selections it made above. Include this file in your version control repository
-so that Terraform can guarantee to make the same selections by default when
-you run "terraform init" in the future.
-
-Terraform has been successfully initialized!
-
-You may now begin working with Terraform. Try running "terraform plan" to see
-any changes that are required for your infrastructure. All Terraform commands
-should now work.
-
-If you ever set or change modules or backend configuration for Terraform,
-rerun this command to reinitialize your working directory. If you forget, other
-commands will detect it and remind you to do so if necessary.
-
-Теперь мы можем переходить к созданию манифестов для наших ресурсов.
-Виртуальные сети
-
-Сначала создадим виртуальную сеть.
-
-Для этого мы будем использовать файл network.tf со следующим содержимым:
-
-resource "yandex_vpc_network" "wp-network" {
-  name = "wp-network"
-}
-
-resource "yandex_vpc_subnet" "wp-subnet-a" {
-  name = "wp-subnet-a"
-  v4_cidr_blocks = ["10.2.0.0/16"]
-  zone           = "ru-central1-a"
-  network_id     = yandex_vpc_network.wp-network.id
-}
-
-resource "yandex_vpc_subnet" "wp-subnet-b" {
-  name = "wp-subnet-b"
-  v4_cidr_blocks = ["10.3.0.0/16"]
-  zone           = "ru-central1-b"
-  network_id     = yandex_vpc_network.wp-network.id
-}
-
-resource "yandex_vpc_subnet" "wp-subnet-d" {
-  name = "wp-subnet-d"
-  v4_cidr_blocks = ["10.4.0.0/16"]
-  zone           = "ru-central1-d"
-  network_id     = yandex_vpc_network.wp-network.id
-}
-
-Обратите внимание, что здесь мы создаем ресурс типа yandex_vpc_network и три ресурса с подсетями yandex_vpc_subnet, которые будут располагаться в разных зонах (помним про отказоустойчивость!).
-
-Соответственно, в ресурсе yandex_vpc_subnet мы указываем блок IP-адресов, зону, где будет расположена данная подсеть и ссылку на саму виртуальную сеть.
-
-Давайте проверим как работает данный манифест, выполним команду:
-
-terraform apply --auto-approve
-
-Флаг –auto-approve мы используем, чтобы не тратить лишнее время на подтверждение запроса о применении манифеста.
-
-Если в манифесте мы не допустили ошибок, то после исполнения команды, последним сообщением мы увидим:
-
-Apply complete! Resources: 4 added, 0 changed, 0 destroyed.
-
-Действительно, мы создали четыре новых ресурса - одну виртуальную сеть и три ее подсети.
-Виртуальные машины
-
-Следующая задача - манифесты для хостов, где будет разворачиваться WordPress.
-
-Создадим файл wp-app.tf со следующим содержимым:
-
-resource "yandex_compute_instance" "wp-app-1" {
-  name = "wp-app-1"
-  zone = "ru-central1-a"
-
-  resources {
-    cores  = 2
-    memory = 2
-  }
-
-  boot_disk {
-    initialize_params {
-      image_id = "fd80viupr3qjr5g6g9du"
-    }
-  }
-
-  network_interface {
-    # Указан id подсети default-ru-central1-a
-    subnet_id = yandex_vpc_subnet.wp-subnet-a.id
-    nat       = true
-  }
-
-  metadata = {
-    ssh-keys = "ubuntu:${file("~/.ssh/yc.pub")}"
-  }
-}
-
-resource "yandex_compute_instance" "wp-app-2" {
-  name = "wp-app-2"
-  zone = "ru-central1-b"
-
-  resources {
-    cores  = 2
-    memory = 2
-  }
-
-  boot_disk {
-    initialize_params {
-      image_id = "fd80viupr3qjr5g6g9du"
-    }
-  }
-
-  network_interface {
-    # Указан id подсети default-ru-central1-b
-    subnet_id = yandex_vpc_subnet.wp-subnet-b.id
-    nat       = true
-  }
-
-  metadata = {
-    ssh-keys = "ubuntu:${file("~/.ssh/yc.pub")}"
-  }
-}
-
-Здесь мы создаем два ресурса вида yandex_compute_instance - т.е. две виртуальные машины. Для них в блоке resources мы указываем кол-во ядер, памяти. В блоке boot_disk ID образа с операционной системы (в данном случае это Ubuntu 18.04). В блоке network_interface мы указываем подсеть, в которой будет располагаться виртуальная машина. И, наконец, в блоке metadata передается публичная часть ключа для подключения через SSH. Вы, разумеется, можете использовать имеющийся у вас ключ.
-
-Снова запустим команду применения манифестов и убедимся, что виртуальные машины созданы успешно:
-
-terraform apply --auto-approve
-...
-Apply complete! Resources: 2 added, 0 changed, 0 destroyed.
-
-Балансировщик трафика
-
-Итак, виртуальные машины у нас есть, теперь мы можем создать балансировщик, который будет перенаправлять на них пользовательский трафик.
-
-Создадим манифест lb.tf со следующим содержимым:
-
-resource "yandex_lb_target_group" "wp_tg" {
-  name      = "wp-target-group"
-
-  target {
-    subnet_id = yandex_vpc_subnet.wp-subnet-a.id
-    address   = yandex_compute_instance.wp-app-1.network_interface.0.ip_address
-  }
-
-  target {
-    subnet_id = yandex_vpc_subnet.wp-subnet-b.id
-    address   = yandex_compute_instance.wp-app-2.network_interface.0.ip_address
-  }
-}
-
-resource "yandex_lb_network_load_balancer" "wp_lb" {
-  name = "wp-network-load-balancer"
-
-  listener {
-    name = "wp-listener"
-    port = 80
-    external_address_spec {
-      ip_version = "ipv4"
-    }
-  }
-
-  attached_target_group {
-    target_group_id = yandex_lb_target_group.wp_tg.id
-
-    healthcheck {
-      name = "http"
-      http_options {
-        port = 80
-        path = "/health"
-      }
-    }
-  }
-}
-
-В данном манифесте мы, во-первых, создаем группу хостов, куда будем направлять трафик, при помощи ресурса yandex_lb_target_group. В нем мы ссылаемся на IP-адреса созданных ранее виртуальных машин.
-
-Далее мы создаем сам балансировщик при помощи ресурса yandex_lb_network_load_balancer. В блоке listener мы указываем порт, который будет слушать балансировщик. А в блоке attached_target_group указывается ссылка на группу хостов yandex_lb_target_group.
-
-Запустим команду применения манифестов и убедимся, что виртуальные машины созданы успешно:
-
-terraform apply --auto-approve
-...
-Apply complete! Resources: 2 added, 0 changed, 0 destroyed.
-
-В данном случае, два новых ресурса - это сам балансировщик и группа хостов, на которые он направляет трафик.
-
-ЗАДАНИЕ С ДВУМЯ ЗВЕЗДОЧКАМИ
-
-Обратите внимание, что в манифесте группы хостов для балансировщика мы явно указывали отдельные блоки target с именами виртуальных машин
-
-address = yandex_compute_instance.wp-app-1.network_interface.0.ip_address
-
-Понятно, что это может быть не очень удобное, если мы захотим уменьшить или увеличить кол-во хостов, где будет развернут WordPress.
-
-Попробуйте изменить манифесты создания виртуальных машин и балансировщика, чтобы кол-вом хостов можно было управлять при помощи переменной и при этом не требовалось бы вносить изменения в манифесты терраформа.
-База данных
-
-Предполагается, что в качестве бекэнда для WordPress-а мы будем использовать MySQL.
-
-Воспользуемся для этой цели возможностью создать в YC облачный кластер MySQL и опишем для этого соответствующий манифест.
-
-Назовем его db.tf
-Содержимое манифеста будет:
-
-locals {
-  dbuser = tolist(yandex_mdb_mysql_cluster.wp_mysql.user.*.name)[0]
-  dbpassword = tolist(yandex_mdb_mysql_cluster.wp_mysql.user.*.password)[0]
-  dbhosts = yandex_mdb_mysql_cluster.wp_mysql.host.*.fqdn
-  dbname = tolist(yandex_mdb_mysql_cluster.wp_mysql.database.*.name)[0]
-}
-
-resource "yandex_mdb_mysql_cluster" "wp_mysql" {
-  name        = "wp-mysql"
-  folder_id   = var.yc_folder
-  environment = "PRODUCTION"
-  network_id  = yandex_vpc_network.wp-network.id
-  version     = "8.0"
-
-  resources {
-    resource_preset_id = "s2.micro"
-    disk_type_id       = "network-ssd"
-    disk_size          = 16
-  }
-
-  database {
-    name  = "db"
-  }
-
-  user {
-    name     = "user"
-    password = var.db_password
-    authentication_plugin = "MYSQL_NATIVE_PASSWORD"
-    permission {
-      database_name = "db"
-      roles         = ["ALL"]
-    }
-  }
-
-  host {
-    zone      = "ru-central1-b"
-    subnet_id = yandex_vpc_subnet.wp-subnet-b.id
-    assign_public_ip = true
-  }
-  host {
-    zone      = "ru-central1-d"
-    subnet_id = yandex_vpc_subnet.wp-subnet-d.id
-    assign_public_ip = true
-  }
-}
-
-Кластер баз данных мы создаем при помощи ресурса yandex_mdb_mysql_cluster.
-
-Из основного в нем стоит обратить внимание на version, где задается версия MySQL.
-
-В блоках database и user мы задаем имя базы и имя с паролем для пользователя базы, соответственно.
-
-В блоках host указываются подсети, где будут размещены узлы кластера.
-
-Итак, запустим команду применения манифестов и убедимся, что кластер баз данных создан успешно. На этот раз придется подождать около десяти минут, создание кластера - дело не быстрое.
-
-terraform apply --auto-approve
-...
-yandex_mdb_mysql_cluster.wp_mysql: Creation complete after 8m43s [id=c9qqolkr9pd30thkklro]
-
-Apply complete! Resources: 1 added, 0 changed, 0 destroyed.
-
-Output-переменные
-
-И в завершении давайте создадим файл output.tf, где укажем вывод некоторой информации, которая может нам пригодится.
-
-Содержимое данного манифеста:
+....... ....... ..... .......... load_balancer_public_ip .. .........:
 
 output "load_balancer_public_ip" {
   description = "Public IP address of load balancer"
-  value = yandex_lb_network_load_balancer.wp_lb.listener.*.external_address_spec[0].*.address
+  value = tolist(tolist(yandex_lb_network_load_balancer.wp_lb.listener).0.external_address_spec).0.address
+}
+
+. ..... .... ..... .......... ..... ......... ... (. ... IP ..... ......):
+
+load_balancer_public_ip = "84.201.165.8"
+
+. ....... ... .... .......... ... ........... IP ..... .. ........... .....
+
+output "vm_linux_public_ip_address" {
+  description = "Virtual machine IP"
+  value = yandex_compute_instance.wp-app-1.network_interface[0].nat_ip_address
+}
+
+. ..... .... output.tf ...... ......... ...:
+
+output "load_balancer_public_ip" {
+  description = "Public IP address of load balancer"
+  value = tolist(tolist(yandex_lb_network_load_balancer.wp_lb.listener).0.external_address_spec).0.address
 }
 
 output "database_host_fqdn" {
@@ -482,37 +84,671 @@ output "database_host_fqdn" {
   value = local.dbhosts
 }
 
-Как нетрудно заметить, вы запрашиваем вывод IP балансировщика и dns-имена баз данных.
+output "vm_linux_public_ip_address" {
+  description = "Virtual machine IP"
+  value = yandex_compute_instance.wp-app-1.network_interface[0].nat_ip_address
+}
 
-Мы можем запустить команду terraform apply еще раз и, хотя в этот раз никаких новых ресурсов мы не создали, но мы увидим вывод запрошенной информации (IP и имена баз данных у вас будут свои):
+.gitignore
 
-terraform apply --auto-approve
+...... ... .. ......... . ......... ...... ........ .... .gitignore ...... . ............ ... ..... Go
+
+# Created by https://www.toptal.com/developers/gitignore/api/go
+# Edit at https://www.toptal.com/developers/gitignore?templates=go
+
+### Go ###
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool, specifically when used with LiteIDE
+*.out
+
+# Dependency directories (remove the comment below to include it)
+# vendor/
+
+### Go Patch ###
+vendor
+Godeps
+
+# End of https://www.toptal.com/developers/gitignore/api/go
+
+Terratest
+............. .......
+
+...., ...... ..... ............... ... .......
+
+........ . ........ terraform .......... test.
+
+. test ........ .... end2end_test.go .. ......... ..........:
+
+package test
+
+import (
+    "testing"
+)
+
+func TestEndToEndDeploymentScenario(t *testing.T) {
+}
+
+....... ...... .. ........ .... ....., . .... ........ ....... ............. ...... Go
+
+. go mod init test
+go: creating new go.mod: module test
+go: to add module requirements and sums:
+    go mod tidy
+
+... .. ...... ........ - . ........ ........ .... go.mod
+
+. head go.mod
+module test
+
+go 1.17
+
+...... . ... .......... ......., . .......... ... ..... ......... ...... .. .........., ....... ..... .......... ... ...... .......
+........ ..............
+
+... ... .... .. ........ ..... Terratest ......... . ....... ........... ......., .. .. ...... . ...., ... ......... end2end_test.go ............ ... ..... .........:
+
+package test
+
+import (
+    "fmt"
+    "flag"
+    "testing"
+    "time"
+
+    "github.com/gruntwork-io/terratest/modules/terraform"
+)
+
+var folder = flag.String("folder", "", "Folder ID in Yandex.Cloud")
+
+func TestEndToEndDeploymentScenario(t *testing.T) {
+
+    terraformOptions := &terraform.Options{
+	    TerraformDir: "../",
+
+	    Vars: map[string]interface{}{
+	    "yc_folder":    *folder,
+	    },
+    }
+
+    defer terraform.Destroy(t, terraformOptions)
+
+    terraform.InitAndApply(t, terraformOptions)
+
+    fmt.Println("Finish infra.....")
+
+    time.Sleep(30 * time.Second)
+
+    fmt.Println("Destroy infra.....")
+}
+
+........ ........, ... ...... ... ........
+
+var folder = flag.String("folder", "", "Folder ID in Yandex.Cloud")
+
+... .. .......... .......... folder, ....... ..... ......... ........ ID ........, ... ..... ........... ........ ... .. ......., .. ...... ... ...... . ........ stage Yandex.Cloud. ... ... ............ ID ........ - ...... ...., .. ..... .......... ... . ........ ...../..... . ....... ....... .......
+
+    terraformOptions := &terraform.Options{
+	    TerraformDir: "../",
+
+	    Vars: map[string]interface{}{
+	    "yc_folder":    *folder,
+	    },
+    }
+
+... .. ........ Terratest, ... ......... ......... .......... TerraformDir: "../" . ...... ........ input-.......... .......... yc_folder ...... ID ........, ....... ..... ........ ... ....... ...... . ......... . .......... folder.
+
+    defer terraform.Destroy(t, terraformOptions)
+
+... ...... ......... defer .. ........ ....... terraform.Destroy ..... .......... ..... ....... .... ..... .... ...... ........ ....... TestEndToEndDeploymentScenario.
+
+    terraform.InitAndApply(t, terraformOptions)
+
+... ........... ....... init . apply ... .......... ...........
+
+    fmt.Println("Finish infra.....")
+
+    time.Sleep(30 * time.Second)
+
+    fmt.Println("Destroy infra.....")
+
+..... .. ....... . ....... .............. .......... ............ ......... . ...... ......... ....., . ....... ....... .. ...... ....... . ...-....... Yandex.Cloud . ........., ... ....... ............. ........
+
+import (
+    "fmt"
+    "flag"
+    "testing"
+    "time"
+
+    "github.com/gruntwork-io/terratest/modules/terraform"
+)
+
+... .., . ...... import .. ........ ... ........... ... .........., ....... ............... terratest "github.com/gruntwork-io/terratest/modules/terraform"
+
+...... ... ......... ...., ........ ......., ........... ........... ...........
+
+go mod vendor
+
+...... .. ..... ......... ...., ...... . ........ ..... ..... .. ....... .. ...... ........... (...... .. ......... ... ....... ..... ...... ...: https://terratest.gruntwork.io/docs/testing-best-practices/timeouts-and-logging/) . ......... ID ........ stage (. ... ID ..... .........., .......)
+
+go test -v ./ -timeout 30m -folder 'b1guvpc4h7oehnd9pabt'
+
+........ ........, ... ....... . .... ..... .... ......... . ........ ........ (... ... ...... ... ...... ....... terraform apply), . . ..... - ........... .. .. ............
+
+. ..... .. ........ ........., ... ............ ...... ... .......
+
 ...
-Apply complete! Resources: 0 added, 0 changed, 0 destroyed.
+--- PASS: TestEndToEndDeploymentScenario (515.93s)
+PASS
+ok  	test	516.210s
 
-Outputs:
+.......... ........ ............
 
-database_host_fqdn = tolist([
-  "rc1b-xveb6hht7i0a1luv.mdb.yandexcloud.net",
-  "rc1c-u2r99z9ektqz4zq8.mdb.yandexcloud.net",
-])
-load_balancer_public_ip = tolist([
-  "84.201.161.168",
-])
+... .. ....., ...... ........ . ........ .............. ...... ......., .. ..... ..... 10 ...... .. ....... ..... ......... ....... ....... ........ ........ ... .......
 
-Удаление ресурсов
+.........., ... .... .. ..... .......... ....., ...... ........ ..... ........ .......... ..... ........
 
-После завершения работы над ДЗ, не забудьте выполнить команду удаления созданных ресурсов.
+..... ..... .... .. ........, .... .. ... .. ....... ...... ... ......... ..... . ...... ......, .... . ........ ....... .......... .......... ...........
 
-Вы всегда сможете быстро поднять всю необходимую инфраструктуру при работе над следующими домашними заданиями.
+. ......., Terratest ......... ... ... ........
 
-terraform destroy --auto-approve
+........ ..... end2end_test.go ......... ...:
+
+package test
+
+import (
+    "fmt"
+    "flag"
+    "testing"
+
+    "github.com/gruntwork-io/terratest/modules/terraform"
+    test_structure "github.com/gruntwork-io/terratest/modules/test-structure"
+)
+
+var folder = flag.String("folder", "", "Folder ID in Yandex.Cloud")
+
+func TestEndToEndDeploymentScenario(t *testing.T) {
+    fixtureFolder := "../"
+
+    test_structure.RunTestStage(t, "setup", func() {
+	terraformOptions := &terraform.Options{
+	    TerraformDir: fixtureFolder,
+
+	    Vars: map[string]interface{}{
+	    "yc_folder":    *folder,
+	    },
+        }
+
+	test_structure.SaveTerraformOptions(t, fixtureFolder, terraformOptions)
+
+	terraform.InitAndApply(t, terraformOptions)
+    })
+
+    test_structure.RunTestStage(t, "validate", func() {
+        fmt.Println("Run some tests...")
+
+    })
+
+    test_structure.RunTestStage(t, "teardown", func() {
+	terraformOptions := test_structure.LoadTerraformOptions(t, fixtureFolder)
+	terraform.Destroy(t, terraformOptions)
+    })
+}
+
+... .......... - ...... ...... ...... ........... ........ ............ (........ .............., .......... ....., ........ ..............) .. .......... . ........... ....... test_structure.RunTestStage. ..... .. .......... ..... ....... ... ...... (setup/validate.teardown) . ............. ......., . ....... . .......... ........... .........
+
+...., ...... ......... .... imports - ......... ...... test_structure "github.com/gruntwork-io/terratest/modules/test-structure"
+
+... ... ........ .......
+
+go mod vendor
+
+. ........ ....
+
+go test -v ./ -timeout 30m -folder 'b1guvpc4h7oehnd9pabt'
+
+. ... ..... ... .. .......... ........ . ........ .............., .. ........ ........ .. ......... ......, ....... ......... . ....:
+
 ...
+TestEndToEndDeploymentScenario 2021-09-10T22:21:01+03:00 test_structure.go:26: The 'SKIP_setup' environment variable is not set, so executing stage 'setup'.
+...
+TestEndToEndDeploymentScenario 2021-09-10T22:27:50+03:00 test_structure.go:26: The 'SKIP_validate' environment variable is not set, so executing stage 'validate'.
+...
+TestEndToEndDeploymentScenario 2021-09-10T22:27:50+03:00 test_structure.go:26: The 'SKIP_teardown' environment variable is not set, so executing stage 'teardown'.
 
-Destroy complete! Resources: 9 destroyed.
+....., ........... ......... .......... ........., ... ....... ....... .. ........ .SKIP_. . ..... ....... . ...... ... ...... .... .......... .. ..... ......... ..., ..... .. ........... .. ... .... ......, ... ....
 
-Проверка ДЗ
+........ ... .. .... ........ .. ....., ..... ... ......... ....... ........... ...... ...... setup (........ ..............).
 
-Для проверки ДЗ необходимо предоставить ссылку на открытый репозиторий с манифестами терраформа.
+... ..... .. ......... ... .......... .........:
 
-В репозитории должен находится файл README.md с описанием выполненной работы.
+export SKIP_validate=true
+
+export SKIP_teardown=true
+
+. ..... ........ ....:
+
+go test -v ./ -timeout 30m -folder 'b1guvpc4h7oehnd9pabt'
+
+.. .... ... .......... ...... ...... ........ ............... ...... ............... ............ . ........ .............. .. ............
+
+.............., . .... ..... .......:
+
+...
+TestEndToEndDeploymentScenario 2021-09-10T22:34:31+03:00 test_structure.go:26: The 'SKIP_setup' environment variable is not set, so executing stage 'setup'.
+...
+TestEndToEndDeploymentScenario 2021-09-10T22:40:58+03:00 test_structure.go:29: The 'SKIP_validate' environment variable is set, so skipping stage 'validate'.
+...
+TestEndToEndDeploymentScenario 2021-09-10T22:40:58+03:00 test_structure.go:29: The 'SKIP_teardown' environment variable is set, so skipping stage 'teardown'.
+
+., .... ... ......... ........., .. ..... ..... ........... ...... ...... validate, .. .. ....... .........:
+
+export SKIP_setup=true
+
+unset SKIP_validate
+
+. ........, .......... .. .., ... ... .....:
+
+. go test -v ./ -timeout 30m -folder 'b1guvpc4h7oehnd9pabt'
+=== RUN   TestEndToEndDeploymentScenario
+TestEndToEndDeploymentScenario 2021-09-10T22:56:09+03:00 test_structure.go:29: The 'SKIP_setup' environment variable is set, so skipping stage 'setup'.
+TestEndToEndDeploymentScenario 2021-09-10T22:56:09+03:00 test_structure.go:26: The 'SKIP_validate' environment variable is not set, so executing stage 'validate'.
+Run some tests...
+TestEndToEndDeploymentScenario 2021-09-10T22:56:09+03:00 test_structure.go:29: The 'SKIP_teardown' environment variable is set, so skipping stage 'teardown'.
+--- PASS: TestEndToEndDeploymentScenario (0.00s)
+PASS
+ok  	test	0.406s
+
+.., .. ........ .., ... .......
+
+. .......-...
+............. ..... .....
+
+...., ........ .......... . ..... ......
+
+    ......... ........:
+
+        ....... IP Load balancer-. . state-. ..........
+        ........... ............ .. ssh . ..... .. ........... .....
+        ........... ........... . .... ...... (... ....... ... ...........)
+
+....... ... ........
+
+... ........ ....... IP .............. ....... . ...... validate ..... .......
+
+fmt.Println("Run some tests...")
+
+......... ....
+
+        terraformOptions := test_structure.LoadTerraformOptions(t, fixtureFolder)
+
+        // test load balancer ip existing
+        loadbalancerIPAddress := terraform.Output(t, terraformOptions, "load_balancer_public_ip")
+
+        if loadbalancerIPAddress == "" {
+	    t.Fatal("Cannot retrieve the public IP address value for the load balancer.")
+	}
+
+... .. ........ .......... ... terratest-. ...... ...... ...........
+
+..... ......... .......... loadbalancerIPAddress ........ IP, ......., ... .. ......., ...... .... . output-.......... ..........
+
+. ..... ........., ... ........ loadbalancerIPAddress .. ........
+
+........ ... end2end_test.go ...... ......... ...:
+
+package test
+
+import (
+    "fmt"
+    "flag"
+    "testing"
+
+    "github.com/gruntwork-io/terratest/modules/terraform"
+    test_structure "github.com/gruntwork-io/terratest/modules/test-structure"
+)
+
+var folder = flag.String("folder", "", "Folder ID in Yandex.Cloud")
+
+func TestEndToEndDeploymentScenario(t *testing.T) {
+    fixtureFolder := "../"
+
+    test_structure.RunTestStage(t, "setup", func() {
+	terraformOptions := &terraform.Options{
+	    TerraformDir: fixtureFolder,
+
+	    Vars: map[string]interface{}{
+	    "yc_folder":    *folder,
+	    },
+        }
+
+	test_structure.SaveTerraformOptions(t, fixtureFolder, terraformOptions)
+
+	terraform.InitAndApply(t, terraformOptions)
+    })
+
+    test_structure.RunTestStage(t, "validate", func() {
+        fmt.Println("Run some tests...")
+
+        terraformOptions := test_structure.LoadTerraformOptions(t, fixtureFolder)
+
+            // test load balancer ip existing
+        loadbalancerIPAddress := terraform.Output(t, terraformOptions, "load_balancer_public_ip")
+
+        if loadbalancerIPAddress == "" {
+	    t.Fatal("Cannot retrieve the public IP address value for the load balancer.")
+	}
+
+    })
+
+    test_structure.RunTestStage(t, "teardown", func() {
+	terraformOptions := test_structure.LoadTerraformOptions(t, fixtureFolder)
+	terraform.Destroy(t, terraformOptions)
+    })
+}
+
+........ ....:
+
+. go test -v ./ -timeout 30m -folder 'b1guvpc4h7oehnd9pabt'
+=== RUN   TestEndToEndDeploymentScenario
+TestEndToEndDeploymentScenario 2021-09-10T23:06:08+03:00 test_structure.go:29: The 'SKIP_setup' environment variable is set, so skipping stage 'setup'.
+TestEndToEndDeploymentScenario 2021-09-10T23:06:08+03:00 test_structure.go:26: The 'SKIP_validate' environment variable is not set, so executing stage 'validate'.
+Run some tests...
+TestEndToEndDeploymentScenario 2021-09-10T23:06:08+03:00 save_test_data.go:215: Loading test data from ../.test-data/TerraformOptions.json
+TestEndToEndDeploymentScenario 2021-09-10T23:06:08+03:00 retry.go:91: terraform [output -no-color -json load_balancer_public_ip]
+TestEndToEndDeploymentScenario 2021-09-10T23:06:08+03:00 logger.go:66: Running command terraform with args [output -no-color -json load_balancer_public_ip]
+TestEndToEndDeploymentScenario 2021-09-10T23:06:08+03:00 logger.go:66: "130.193.34.29"
+TestEndToEndDeploymentScenario 2021-09-10T23:06:08+03:00 test_structure.go:29: The 'SKIP_teardown' environment variable is set, so skipping stage 'teardown'.
+--- PASS: TestEndToEndDeploymentScenario (0.22s)
+PASS
+ok  	test	0.488s
+
+........ ........, ... ..... Run some tests... ......... ......, ........... ........... ........ .. ....... IP ...............
+
+...., ...... .... .. ......., ....... ........ . ..... ........ ..... - ........ ........... ........... .. ssh.
+
+. ... .. ............ ........... . ........... ......, .. terratest-. ...-.. .... ........ ......... ...., ... ...... ........ .. . ..... ........ ......... ............
+
+... ..... .. ....... ........... ........ ... ...... ..... - .... . .......... ......
+
+..... ........... ..........
+
+var folder = ...
+
+....... ... ....
+
+var sshKeyPath = flag.String("ssh-key-pass", "", "Private ssh key for access to virtual machines")
+
+..... .. ............, ... ... ....... ...... .. ..... ssh-key-pass ..... ....... .... . .......... ......
+
+., ..... .....
+
+        if loadbalancerIPAddress == "" {
+	    t.Fatal("Cannot retrieve the public IP address value for the load balancer.")
+	}
+
+....... .......... ....... ....
+
+	// test ssh connect
+	vmLinuxPublicIPAddress := terraform.Output(t, terraformOptions, "vm_linux_public_ip_address")
+
+	key, err := ioutil.ReadFile(*sshKeyPath)
+	if err != nil {
+	    t.Fatalf("Unable to read private key: %v", err)
+	}
+
+	signer, err := ssh.ParsePrivateKey(key)
+	if err != nil {
+	    t.Fatalf("Unable to parse private key: %v", err)
+	}
+
+	sshConfig := &ssh.ClientConfig{
+	    User: "ubuntu",
+	    Auth: []ssh.AuthMethod{
+		ssh.PublicKeys(signer),
+	    },
+	    HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+	}
+
+	sshConnection, err := ssh.Dial("tcp", fmt.Sprintf("%s:22", vmLinuxPublicIPAddress), sshConfig)
+	if err != nil {
+	    t.Fatalf("Cannot establish SSH connection to vm-linux public IP address: %v", err)
+	}
+
+	defer sshConnection.Close()
+        
+	sshSession, err := sshConnection.NewSession()
+	if err != nil {
+	    t.Fatalf("Cannot create SSH session to vm-linux public IP address: %v", err)
+	}
+
+	defer sshSession.Close()
+        
+	err = sshSession.Run(fmt.Sprintf("ping -c 1 8.8.8.8"))
+	if err != nil {
+	    t.Fatalf("Cannot ping 8.8.8.8: %v", err)
+	}
+
+........ ... .. ......
+
+vmLinuxPublicIPAddress := terraform.Output(t, terraformOptions, "vm_linux_public_ip_address")
+
+.. output-.......... .......... .. ........ IP-..... ........... .......
+
+key, err := ioutil.ReadFile(*sshKeyPath)
+	if err != nil {
+	    t.Fatalf("Unable to read private key: %v", err)
+	}
+
+. .......... key ......... .......... ..... . ......... .......
+
+	signer, err := ssh.ParsePrivateKey(key)
+	if err != nil {
+	    t.Fatalf("Unable to parse private key: %v", err)
+	}
+
+........... .......... signer ........ .......... ......
+
+	sshConfig := &ssh.ClientConfig{
+	    User: "ubuntu",
+	    Auth: []ssh.AuthMethod{
+		ssh.PublicKeys(signer),
+	    },
+	    HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+	}
+
+........... ............ ........... - ... ..... ......, . ..... ...... ...... ....... . ........... .......
+
+	sshConnection, err := ssh.Dial("tcp", fmt.Sprintf("%s:22", vmLinuxPublicIPAddress), sshConfig)
+	if err != nil {
+	    t.Fatalf("Cannot establish SSH connection to vm-linux public IP address: %v", err)
+	}
+
+	defer sshConnection.Close()
+        
+	sshSession, err := sshConnection.NewSession()
+	if err != nil {
+	    t.Fatalf("Cannot create SSH session to vm-linux public IP address: %v", err)
+	}
+
+	defer sshSession.Close()
+
+........ ............ .. ssh . ........... ....... . .. ........ ......... .......... (... defer)!
+
+	err = sshSession.Run(fmt.Sprintf("ping -c 1 8.8.8.8"))
+	if err != nil {
+	    t.Fatalf("Cannot ping 8.8.8.8: %v", err)
+	}
+
+.. . ..... .... .. ......, ........ ...-...... ............ . ........... .......
+
+. . imports ........... ... .... .......... - "golang.org/x/crypto/ssh"
+
+....., ......... ... end2end_test.go .........:
+
+package test
+
+import (
+    "fmt"
+    "io/ioutil"
+    "flag"
+    "testing"
+
+    "github.com/gruntwork-io/terratest/modules/terraform"
+    test_structure "github.com/gruntwork-io/terratest/modules/test-structure"
+    "golang.org/x/crypto/ssh"
+)
+
+var folder = flag.String("folder", "", "Folder ID in Yandex.Cloud")
+var sshKeyPath = flag.String("ssh-key-pass", "", "Private ssh key for access to virtual machines")
+
+func TestEndToEndDeploymentScenario(t *testing.T) {
+    fixtureFolder := "../"
+
+    test_structure.RunTestStage(t, "setup", func() {
+	terraformOptions := &terraform.Options{
+	    TerraformDir: fixtureFolder,
+
+	    Vars: map[string]interface{}{
+	    "yc_folder":    *folder,
+	    },
+        }
+
+	test_structure.SaveTerraformOptions(t, fixtureFolder, terraformOptions)
+
+	terraform.InitAndApply(t, terraformOptions)
+    })
+
+    test_structure.RunTestStage(t, "validate", func() {
+        fmt.Println("Run some tests...")
+
+        terraformOptions := test_structure.LoadTerraformOptions(t, fixtureFolder)
+
+        // test load balancer ip existing
+        loadbalancerIPAddress := terraform.Output(t, terraformOptions, "load_balancer_public_ip")
+
+        if loadbalancerIPAddress == "" {
+	    t.Fatal("Cannot retrieve the public IP address value for the load balancer.")
+	}
+
+	// test ssh connect
+	vmLinuxPublicIPAddress := terraform.Output(t, terraformOptions, "vm_linux_public_ip_address")
+
+	key, err := ioutil.ReadFile(*sshKeyPath)
+	if err != nil {
+	    t.Fatalf("Unable to read private key: %v", err)
+	}
+
+	signer, err := ssh.ParsePrivateKey(key)
+	if err != nil {
+	    t.Fatalf("Unable to parse private key: %v", err)
+	}
+
+	sshConfig := &ssh.ClientConfig{
+	    User: "ubuntu",
+	    Auth: []ssh.AuthMethod{
+		ssh.PublicKeys(signer),
+	    },
+	    HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+	}
+
+	sshConnection, err := ssh.Dial("tcp", fmt.Sprintf("%s:22", vmLinuxPublicIPAddress), sshConfig)
+	if err != nil {
+	    t.Fatalf("Cannot establish SSH connection to vm-linux public IP address: %v", err)
+	}
+
+	defer sshConnection.Close()
+
+	sshSession, err := sshConnection.NewSession()
+	if err != nil {
+	    t.Fatalf("Cannot create SSH session to vm-linux public IP address: %v", err)
+	}
+
+	defer sshSession.Close()
+
+	err = sshSession.Run(fmt.Sprintf("ping -c 1 8.8.8.8"))
+	if err != nil {
+	    t.Fatalf("Cannot ping 8.8.8.8: %v", err)
+	}
+    })
+
+    test_structure.RunTestStage(t, "teardown", func() {
+	terraformOptions := test_structure.LoadTerraformOptions(t, fixtureFolder)
+	terraform.Destroy(t, terraformOptions)
+    })
+}
+
+... ... .. ........ ..... .........., .. .. ........ .........
+
+. go mod vendor
+
+..... ......... ...., . ........ ........ .. .............. .... - -ssh-key-pass
+
+. go test -v ./ -timeout 30m -folder 'b1guvpc4h7oehnd9pabt' -ssh-key-pass '/Users/igor/.ssh/yc'
+
+=== RUN   TestEndToEndDeploymentScenario
+TestEndToEndDeploymentScenario 2021-09-10T23:30:46+03:00 test_structure.go:29: The 'SKIP_setup' environment variable is set, so skipping stage 'setup'.
+TestEndToEndDeploymentScenario 2021-09-10T23:30:46+03:00 test_structure.go:26: The 'SKIP_validate' environment variable is not set, so executing stage 'validate'.
+Run some tests...
+TestEndToEndDeploymentScenario 2021-09-10T23:30:46+03:00 save_test_data.go:215: Loading test data from ../.test-data/TerraformOptions.json
+TestEndToEndDeploymentScenario 2021-09-10T23:30:46+03:00 retry.go:91: terraform [output -no-color -json load_balancer_public_ip]
+TestEndToEndDeploymentScenario 2021-09-10T23:30:46+03:00 logger.go:66: Running command terraform with args [output -no-color -json load_balancer_public_ip]
+TestEndToEndDeploymentScenario 2021-09-10T23:30:47+03:00 logger.go:66: "130.193.34.29"
+TestEndToEndDeploymentScenario 2021-09-10T23:30:47+03:00 retry.go:91: terraform [output -no-color -json vm_linux_public_ip_address]
+TestEndToEndDeploymentScenario 2021-09-10T23:30:47+03:00 logger.go:66: Running command terraform with args [output -no-color -json vm_linux_public_ip_address]
+TestEndToEndDeploymentScenario 2021-09-10T23:30:47+03:00 logger.go:66: "84.201.159.187"
+TestEndToEndDeploymentScenario 2021-09-10T23:30:47+03:00 test_structure.go:29: The 'SKIP_teardown' environment variable is set, so skipping stage 'teardown'.
+--- PASS: TestEndToEndDeploymentScenario (1.34s)
+PASS
+ok  	test	1.772s
+
+... ..... ...... ........
+
+....... .. ..........
+
+......... ..... ......... ....... . .... .......
+
+. ......, ........ ...... .... ........... .... .......
+
+....... ...... .... ....... ...............
+
+... ..... ...... .......... ......... SKIP_teardown:
+
+. unset SKIP_teardown
+
+..... ........ ..... . .. .... ... ..... .. .......... ..... ......... ........ ..............:
+
+. go test -v ./ -timeout 30m -folder 'b1guvpc4h7oehnd9pabt' -ssh-key-pass '/Users/igor/.ssh/yc'
+
+...... ...... .......... .......... ......... SKIP_
+
+. env | grep SKIP
+SKIP_setup=true
+
+. unset SKIP_setup
+
+. ........ ...... .... ............
+
+. go test -v ./ -timeout 30m -folder 'b1guvpc4h7oehnd9pabt' -ssh-key-pass '/Users/igor/.ssh/yc'
+
+........ ..
+
+... ........ .. .......... ............ ...... .. ........ ........... . ........... .......... . ......... . ........
+
+. ........... ...... ......... .... README.md . ......... ........... .......
+
+............. .......... ......... . .. ... ....... .......... .............
+Last changed by  
+.
+Otus
+
+7
+Published on HackMD
