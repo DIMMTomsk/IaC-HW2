@@ -1,754 +1,691 @@
 
-IaC HW3
-........ ....... . ....... ............. ................. .... .. Terraform.
-..........
-........ ............... ........ . Yandex.Cloud
-
-............ ...... .......... ......... ... .. ........ ......... .......... - ....... . .. ....... ............... ..........
-
-.., ... ... ... .... .. ....... ...... ........ ......, .. .. ..... ......... ..... . ......... ........ Yandex.Cloud.
-
-......., .......... ...., ... .......... ....... .otus. . ....... .., ........ . ... .. ...... ... .... ....... - ....... ... .stage.. . ......../....... ID .......... .........
-
-........., ....... .. .. ...... .... ......., ...... ......... ........ ...:
-
-......... ....... .......
-
-... ....... ...... ........... .......... .. ....... ....... GoLang.
-
-.......... .. ......... .. ......... .. ..... ..... ...: https://golang.org/doc/install
-
-............. ....... ......... .......
+IaC HW4
 .... ......
 
-....... ....., ........... ......... .. ....... ....... ... ...... .........-...........
+........... ansible-.... ... ......... WordPress . .............. .............., ........ ... ...... .......... ...........
+..........
 
-......... ........:
+...... ......... .... .......... .............. .. ...... Ansible 2.9.
 
-    ....... IP Load balancer-. . state-. ..........
-    ........... ............ .. ssh . ..... .. ........... .....
-    ........... ........... . .... ...... (... ....... ... ...........)
+.. . ............. ............. .......... ...... . ........... ........ . .. ...... ....... Ansible, .. .. ..............
 
-........ ......
-.......... . ............ ............
+.......... .. ......... ..... ..... ...: https://docs.ansible.com/ansible/2.9/installation_guide/intro_installation.html
+............. .......... .........
 
-... .......... ............ ..... .............. Go-.......... - Terratest.
+... ... . WordPress . ........... ............ ... ............ .... .... /health, .. ... ........ .......... ..... . attached_target_group . ..... lb.tf .... ........ .... healthcheck .. .........:
 
-. ..... ...... ..... ........ .. .......... ............ .......... ............ ..... Go.
-
-. ....... Terratest .. ...... .......... ........ ....., ......... ......... .........., ......... ........... ..... . ....... ........ ......
-
-... ... ..... ....... ... ...... ..... ....... (. ..... .........., . ....... ....)
-
-go test
-
-..... ......... .......... . Terratest .. ....... ..... .. ..... https://terratest.gruntwork.io/docs.
-
-........ ... ..... .......... ...: https://github.com/gruntwork-io/terratest.
-..... .....
-
-....... ........ ..... ..... . ........... . ........ . ...
-
-. git switch -c ansible
-Switched to a new branch 'ansible'
-
-....., ...... ........ .... ...... . output-........... ...........
-
-....... ....... ..... .......... load_balancer_public_ip .. .........:
-
-output "load_balancer_public_ip" {
-  description = "Public IP address of load balancer"
-  value = tolist(tolist(yandex_lb_network_load_balancer.wp_lb.listener).0.external_address_spec).0.address
-}
-
-. ..... .... ..... .......... ..... ......... ... (. ... IP ..... ......):
-
-load_balancer_public_ip = "84.201.165.8"
-
-. ....... ... .... .......... ... ........... IP ..... .. ........... .....
-
-output "vm_linux_public_ip_address" {
-  description = "Virtual machine IP"
-  value = yandex_compute_instance.wp-app-1.network_interface[0].nat_ip_address
-}
-
-. ..... .... output.tf ...... ......... ...:
-
-output "load_balancer_public_ip" {
-  description = "Public IP address of load balancer"
-  value = tolist(tolist(yandex_lb_network_load_balancer.wp_lb.listener).0.external_address_spec).0.address
-}
-
-output "database_host_fqdn" {
-  description = "DB hostname"
-  value = local.dbhosts
-}
-
-output "vm_linux_public_ip_address" {
-  description = "Virtual machine IP"
-  value = yandex_compute_instance.wp-app-1.network_interface[0].nat_ip_address
-}
-
-.gitignore
-
-...... ... .. ......... . ......... ...... ........ .... .gitignore ...... . ............ ... ..... Go
-
-# Created by https://www.toptal.com/developers/gitignore/api/go
-# Edit at https://www.toptal.com/developers/gitignore?templates=go
-
-### Go ###
-# Binaries for programs and plugins
-*.exe
-*.exe~
-*.dll
-*.so
-*.dylib
-
-# Test binary, built with `go test -c`
-*.test
-
-# Output of the go coverage tool, specifically when used with LiteIDE
-*.out
-
-# Dependency directories (remove the comment below to include it)
-# vendor/
-
-### Go Patch ###
-vendor
-Godeps
-
-# End of https://www.toptal.com/developers/gitignore/api/go
-
-Terratest
-............. .......
-
-...., ...... ..... ............... ... .......
-
-........ . ........ terraform .......... test.
-
-. test ........ .... end2end_test.go .. ......... ..........:
-
-package test
-
-import (
-    "testing"
-)
-
-func TestEndToEndDeploymentScenario(t *testing.T) {
-}
-
-....... ...... .. ........ .... ....., . .... ........ ....... ............. ...... Go
-
-. go mod init test
-go: creating new go.mod: module test
-go: to add module requirements and sums:
-    go mod tidy
-
-... .. ...... ........ - . ........ ........ .... go.mod
-
-. head go.mod
-module test
-
-go 1.17
-
-...... . ... .......... ......., . .......... ... ..... ......... ...... .. .........., ....... ..... .......... ... ...... .......
-........ ..............
-
-... ... .... .. ........ ..... Terratest ......... . ....... ........... ......., .. .. ...... . ...., ... ......... end2end_test.go ............ ... ..... .........:
-
-package test
-
-import (
-    "fmt"
-    "flag"
-    "testing"
-    "time"
-
-    "github.com/gruntwork-io/terratest/modules/terraform"
-)
-
-var folder = flag.String("folder", "", "Folder ID in Yandex.Cloud")
-
-func TestEndToEndDeploymentScenario(t *testing.T) {
-
-    terraformOptions := &terraform.Options{
-	    TerraformDir: "../",
-
-	    Vars: map[string]interface{}{
-	    "yc_folder":    *folder,
-	    },
+    healthcheck {
+      name = "tcp"
+      tcp_options {
+        port = 80
+      }
     }
 
-    defer terraform.Destroy(t, terraformOptions)
+. . .... output.tf ....... ..... ....... IP, .. ... ...........:
 
-    terraform.InitAndApply(t, terraformOptions)
-
-    fmt.Println("Finish infra.....")
-
-    time.Sleep(30 * time.Second)
-
-    fmt.Println("Destroy infra.....")
+output "vm_linux_2_public_ip_address" {
+  description = "Virtual machine IP"
+  value = yandex_compute_instance.wp-app-2.network_interface[0].nat_ip_address
 }
 
-........ ........, ... ...... ... ........
+........ ......... ... ...... .......:
 
-var folder = flag.String("folder", "", "Folder ID in Yandex.Cloud")
+. terraform apply --auto-approve
 
-... .. .......... .......... folder, ....... ..... ......... ........ ID ........, ... ..... ........... ........ ... .. ......., .. ...... ... ...... . ........ stage Yandex.Cloud. ... ... ............ ID ........ - ...... ...., .. ..... .......... ... . ........ ...../..... . ....... ....... .......
+.......... ........
 
-    terraformOptions := &terraform.Options{
-	    TerraformDir: "../",
+...... ..... ........ ....... ansible. .......... ....... ... .. ..... ...... . ......... terraform:
 
-	    Vars: map[string]interface{}{
-	    "yc_folder":    *folder,
-	    },
-    }
+. mkdir ansible
+ 
+. ls -lh
 
-... .. ........ Terratest, ... ......... ......... .......... TerraformDir: "../" . ...... ........ input-.......... .......... yc_folder ...... ID ........, ....... ..... ........ ... ....... ...... . ......... . .......... folder.
+-rw-r--r--   1 igor  staff    26B Sep 23 08:17 README.md
+drwxr-xr-x   8 igor  staff   256B Sep 23 22:37 ansible
+drwxr-xr-x  16 igor  staff   512B Sep 24 18:37 terraform
 
-    defer terraform.Destroy(t, terraformOptions)
+........ . ....... ansible . ........ ........... ......... ............
 
-... ...... ......... defer .. ........ ....... terraform.Destroy ..... .......... ..... ....... .... ..... .... ...... ........ ....... TestEndToEndDeploymentScenario.
+. mkdir -p environments/prod/group_vars
+. mkdir files
+. mkdir templates
+. mkdir playbooks
+. mkdir roles
 
-    terraform.InitAndApply(t, terraformOptions)
+.............. .... ......... .........:
 
-... ........... ....... init . apply ... .......... ...........
+    . environments ..... ......... ......... . ........ ......... .......... ... ............ ..... .............. . ..... ...... ... ..... prod - .... ........... ......
+    . files ..... ......... ....., ....... .. ..... ............ . .......... ....
+    . templates ..... ......... .......
+    . playbooks ..... ............ ........ Ansible
+    ....... roles ............ ... ........ .....
 
-    fmt.Println("Finish infra.....")
+..... .. ........ .... ansible.cfg . ......... ........ Ansible.
+........ ........ .. ........ ......... private_key_file. .... ... ......... .... .......... .. ....... - ....... ... ...... ......
 
-    time.Sleep(30 * time.Second)
+ansible.cfg
 
-    fmt.Println("Destroy infra.....")
+[defaults]
+# ...... ..... ......... ..-.........
+inventory = ./environments/prod/inventory
+# ... ..... ............. ............ . ......
+remote_user = ubuntu
+# ... ..... ......... .... ... ........... . ......
+private_key_file = ~/.ssh/yc
+# .......... ........ SSH Host-keys
+host_key_checking = False
+# .......... ............. *.retry-......
+retry_files_enabled = False
+# ............... .....
+roles_path = ./roles
 
-..... .. ....... . ....... .............. .......... ............ ......... . ...... ......... ....., . ....... ....... .. ...... ....... . ...-....... Yandex.Cloud . ........., ... ....... ............. ........
+...... . ..... environments/prod/inventory IP ......, .. ....... .. ..... ....... WordPress.
 
-import (
-    "fmt"
-    "flag"
-    "testing"
-    "time"
+......... .... IP ............ ... ......., ........ ... ..... ...... .. ....... ..... .. output-.......... ... ........... .. . ...-....... ............. (. ...-....... ... ..... ..... ....... IP!!!)
 
-    "github.com/gruntwork-io/terratest/modules/terraform"
-)
+inventory
 
-... .., . ...... import .. ........ ... ........... ... .........., ....... ............... terratest "github.com/gruntwork-io/terratest/modules/terraform"
-
-...... ... ......... ...., ........ ......., ........... ........... ...........
-
-go mod vendor
-
-...... .. ..... ......... ...., ...... . ........ ..... ..... .. ....... .. ...... ........... (...... .. ......... ... ....... ..... ...... ...: https://terratest.gruntwork.io/docs/testing-best-practices/timeouts-and-logging/) . ......... ID ........ stage (. ... ID ..... .........., .......)
-
-go test -v ./ -timeout 30m -folder 'b1guvpc4h7oehnd9pabt'
-
-........ ........, ... ....... . .... ..... .... ......... . ........ ........ (... ... ...... ... ...... ....... terraform apply), . . ..... - ........... .. .. ............
-
-. ..... .. ........ ........., ... ............ ...... ... .......
-
-...
---- PASS: TestEndToEndDeploymentScenario (515.93s)
-PASS
-ok  	test	516.210s
-
-.......... ........ ............
-
-... .. ....., ...... ........ . ........ .............. ...... ......., .. ..... ..... 10 ...... .. ....... ..... ......... ....... ....... ........ ........ ... .......
-
-.........., ... .... .. ..... .......... ....., ...... ........ ..... ........ .......... ..... ........
-
-..... ..... .... .. ........, .... .. ... .. ....... ...... ... ......... ..... . ...... ......, .... . ........ ....... .......... .......... ...........
-
-. ......., Terratest ......... ... ... ........
-
-........ ..... end2end_test.go ......... ...:
-
-package test
-
-import (
-    "fmt"
-    "flag"
-    "testing"
-
-    "github.com/gruntwork-io/terratest/modules/terraform"
-    test_structure "github.com/gruntwork-io/terratest/modules/test-structure"
-)
-
-var folder = flag.String("folder", "", "Folder ID in Yandex.Cloud")
-
-func TestEndToEndDeploymentScenario(t *testing.T) {
-    fixtureFolder := "../"
-
-    test_structure.RunTestStage(t, "setup", func() {
-	terraformOptions := &terraform.Options{
-	    TerraformDir: fixtureFolder,
-
-	    Vars: map[string]interface{}{
-	    "yc_folder":    *folder,
-	    },
-        }
-
-	test_structure.SaveTerraformOptions(t, fixtureFolder, terraformOptions)
-
-	terraform.InitAndApply(t, terraformOptions)
-    })
-
-    test_structure.RunTestStage(t, "validate", func() {
-        fmt.Println("Run some tests...")
-
-    })
-
-    test_structure.RunTestStage(t, "teardown", func() {
-	terraformOptions := test_structure.LoadTerraformOptions(t, fixtureFolder)
-	terraform.Destroy(t, terraformOptions)
-    })
-}
-
-... .......... - ...... ...... ...... ........... ........ ............ (........ .............., .......... ....., ........ ..............) .. .......... . ........... ....... test_structure.RunTestStage. ..... .. .......... ..... ....... ... ...... (setup/validate.teardown) . ............. ......., . ....... . .......... ........... .........
-
-...., ...... ......... .... imports - ......... ...... test_structure "github.com/gruntwork-io/terratest/modules/test-structure"
-
-... ... ........ .......
-
-go mod vendor
-
-. ........ ....
-
-go test -v ./ -timeout 30m -folder 'b1guvpc4h7oehnd9pabt'
-
-. ... ..... ... .. .......... ........ . ........ .............., .. ........ ........ .. ......... ......, ....... ......... . ....:
-
-...
-TestEndToEndDeploymentScenario 2021-09-10T22:21:01+03:00 test_structure.go:26: The 'SKIP_setup' environment variable is not set, so executing stage 'setup'.
-...
-TestEndToEndDeploymentScenario 2021-09-10T22:27:50+03:00 test_structure.go:26: The 'SKIP_validate' environment variable is not set, so executing stage 'validate'.
-...
-TestEndToEndDeploymentScenario 2021-09-10T22:27:50+03:00 test_structure.go:26: The 'SKIP_teardown' environment variable is not set, so executing stage 'teardown'.
-
-....., ........... ......... .......... ........., ... ....... ....... .. ........ .SKIP_. . ..... ....... . ...... ... ...... .... .......... .. ..... ......... ..., ..... .. ........... .. ... .... ......, ... ....
-
-........ ... .. .... ........ .. ....., ..... ... ......... ....... ........... ...... ...... setup (........ ..............).
-
-... ..... .. ......... ... .......... .........:
-
-export SKIP_validate=true
-
-export SKIP_teardown=true
-
-. ..... ........ ....:
-
-go test -v ./ -timeout 30m -folder 'b1guvpc4h7oehnd9pabt'
-
-.. .... ... .......... ...... ...... ........ ............... ...... ............... ............ . ........ .............. .. ............
-
-.............., . .... ..... .......:
-
-...
-TestEndToEndDeploymentScenario 2021-09-10T22:34:31+03:00 test_structure.go:26: The 'SKIP_setup' environment variable is not set, so executing stage 'setup'.
-...
-TestEndToEndDeploymentScenario 2021-09-10T22:40:58+03:00 test_structure.go:29: The 'SKIP_validate' environment variable is set, so skipping stage 'validate'.
-...
-TestEndToEndDeploymentScenario 2021-09-10T22:40:58+03:00 test_structure.go:29: The 'SKIP_teardown' environment variable is set, so skipping stage 'teardown'.
-
-., .... ... ......... ........., .. ..... ..... ........... ...... ...... validate, .. .. ....... .........:
-
-export SKIP_setup=true
-
-unset SKIP_validate
-
-. ........, .......... .. .., ... ... .....:
-
-. go test -v ./ -timeout 30m -folder 'b1guvpc4h7oehnd9pabt'
-=== RUN   TestEndToEndDeploymentScenario
-TestEndToEndDeploymentScenario 2021-09-10T22:56:09+03:00 test_structure.go:29: The 'SKIP_setup' environment variable is set, so skipping stage 'setup'.
-TestEndToEndDeploymentScenario 2021-09-10T22:56:09+03:00 test_structure.go:26: The 'SKIP_validate' environment variable is not set, so executing stage 'validate'.
-Run some tests...
-TestEndToEndDeploymentScenario 2021-09-10T22:56:09+03:00 test_structure.go:29: The 'SKIP_teardown' environment variable is set, so skipping stage 'teardown'.
---- PASS: TestEndToEndDeploymentScenario (0.00s)
-PASS
-ok  	test	0.406s
-
-.., .. ........ .., ... .......
-
-. .......-...
-............. ..... .....
-
-...., ........ .......... . ..... ......
-
-    ......... ........:
-
-        ....... IP Load balancer-. . state-. ..........
-        ........... ............ .. ssh . ..... .. ........... .....
-        ........... ........... . .... ...... (... ....... ... ...........)
-
-....... ... ........
-
-... ........ ....... IP .............. ....... . ...... validate ..... .......
-
-fmt.Println("Run some tests...")
-
-......... ....
-
-        terraformOptions := test_structure.LoadTerraformOptions(t, fixtureFolder)
-
-        // test load balancer ip existing
-        loadbalancerIPAddress := terraform.Output(t, terraformOptions, "load_balancer_public_ip")
-
-        if loadbalancerIPAddress == "" {
-	    t.Fatal("Cannot retrieve the public IP address value for the load balancer.")
-	}
-
-... .. ........ .......... ... terratest-. ...... ...... ...........
-
-..... ......... .......... loadbalancerIPAddress ........ IP, ......., ... .. ......., ...... .... . output-.......... ..........
-
-. ..... ........., ... ........ loadbalancerIPAddress .. ........
-
-........ ... end2end_test.go ...... ......... ...:
-
-package test
-
-import (
-    "fmt"
-    "flag"
-    "testing"
-
-    "github.com/gruntwork-io/terratest/modules/terraform"
-    test_structure "github.com/gruntwork-io/terratest/modules/test-structure"
-)
-
-var folder = flag.String("folder", "", "Folder ID in Yandex.Cloud")
-
-func TestEndToEndDeploymentScenario(t *testing.T) {
-    fixtureFolder := "../"
-
-    test_structure.RunTestStage(t, "setup", func() {
-	terraformOptions := &terraform.Options{
-	    TerraformDir: fixtureFolder,
-
-	    Vars: map[string]interface{}{
-	    "yc_folder":    *folder,
-	    },
-        }
-
-	test_structure.SaveTerraformOptions(t, fixtureFolder, terraformOptions)
-
-	terraform.InitAndApply(t, terraformOptions)
-    })
-
-    test_structure.RunTestStage(t, "validate", func() {
-        fmt.Println("Run some tests...")
-
-        terraformOptions := test_structure.LoadTerraformOptions(t, fixtureFolder)
-
-            // test load balancer ip existing
-        loadbalancerIPAddress := terraform.Output(t, terraformOptions, "load_balancer_public_ip")
-
-        if loadbalancerIPAddress == "" {
-	    t.Fatal("Cannot retrieve the public IP address value for the load balancer.")
-	}
-
-    })
-
-    test_structure.RunTestStage(t, "teardown", func() {
-	terraformOptions := test_structure.LoadTerraformOptions(t, fixtureFolder)
-	terraform.Destroy(t, terraformOptions)
-    })
-}
-
-........ ....:
-
-. go test -v ./ -timeout 30m -folder 'b1guvpc4h7oehnd9pabt'
-=== RUN   TestEndToEndDeploymentScenario
-TestEndToEndDeploymentScenario 2021-09-10T23:06:08+03:00 test_structure.go:29: The 'SKIP_setup' environment variable is set, so skipping stage 'setup'.
-TestEndToEndDeploymentScenario 2021-09-10T23:06:08+03:00 test_structure.go:26: The 'SKIP_validate' environment variable is not set, so executing stage 'validate'.
-Run some tests...
-TestEndToEndDeploymentScenario 2021-09-10T23:06:08+03:00 save_test_data.go:215: Loading test data from ../.test-data/TerraformOptions.json
-TestEndToEndDeploymentScenario 2021-09-10T23:06:08+03:00 retry.go:91: terraform [output -no-color -json load_balancer_public_ip]
-TestEndToEndDeploymentScenario 2021-09-10T23:06:08+03:00 logger.go:66: Running command terraform with args [output -no-color -json load_balancer_public_ip]
-TestEndToEndDeploymentScenario 2021-09-10T23:06:08+03:00 logger.go:66: "130.193.34.29"
-TestEndToEndDeploymentScenario 2021-09-10T23:06:08+03:00 test_structure.go:29: The 'SKIP_teardown' environment variable is set, so skipping stage 'teardown'.
---- PASS: TestEndToEndDeploymentScenario (0.22s)
-PASS
-ok  	test	0.488s
-
-........ ........, ... ..... Run some tests... ......... ......, ........... ........... ........ .. ....... IP ...............
-
-...., ...... .... .. ......., ....... ........ . ..... ........ ..... - ........ ........... ........... .. ssh.
-
-. ... .. ............ ........... . ........... ......, .. terratest-. ...-.. .... ........ ......... ...., ... ...... ........ .. . ..... ........ ......... ............
-
-... ..... .. ....... ........... ........ ... ...... ..... - .... . .......... ......
-
-..... ........... ..........
-
-var folder = ...
-
-....... ... ....
-
-var sshKeyPath = flag.String("ssh-key-pass", "", "Private ssh key for access to virtual machines")
-
-..... .. ............, ... ... ....... ...... .. ..... ssh-key-pass ..... ....... .... . .......... ......
-
-., ..... .....
-
-        if loadbalancerIPAddress == "" {
-	    t.Fatal("Cannot retrieve the public IP address value for the load balancer.")
-	}
-
-....... .......... ....... ....
-
-	// test ssh connect
-	vmLinuxPublicIPAddress := terraform.Output(t, terraformOptions, "vm_linux_public_ip_address")
-
-	key, err := ioutil.ReadFile(*sshKeyPath)
-	if err != nil {
-	    t.Fatalf("Unable to read private key: %v", err)
-	}
-
-	signer, err := ssh.ParsePrivateKey(key)
-	if err != nil {
-	    t.Fatalf("Unable to parse private key: %v", err)
-	}
-
-	sshConfig := &ssh.ClientConfig{
-	    User: "ubuntu",
-	    Auth: []ssh.AuthMethod{
-		ssh.PublicKeys(signer),
-	    },
-	    HostKeyCallback: ssh.InsecureIgnoreHostKey(),
-	}
-
-	sshConnection, err := ssh.Dial("tcp", fmt.Sprintf("%s:22", vmLinuxPublicIPAddress), sshConfig)
-	if err != nil {
-	    t.Fatalf("Cannot establish SSH connection to vm-linux public IP address: %v", err)
-	}
-
-	defer sshConnection.Close()
-        
-	sshSession, err := sshConnection.NewSession()
-	if err != nil {
-	    t.Fatalf("Cannot create SSH session to vm-linux public IP address: %v", err)
-	}
-
-	defer sshSession.Close()
-        
-	err = sshSession.Run(fmt.Sprintf("ping -c 1 8.8.8.8"))
-	if err != nil {
-	    t.Fatalf("Cannot ping 8.8.8.8: %v", err)
-	}
-
-........ ... .. ......
-
-vmLinuxPublicIPAddress := terraform.Output(t, terraformOptions, "vm_linux_public_ip_address")
-
-.. output-.......... .......... .. ........ IP-..... ........... .......
-
-key, err := ioutil.ReadFile(*sshKeyPath)
-	if err != nil {
-	    t.Fatalf("Unable to read private key: %v", err)
-	}
-
-. .......... key ......... .......... ..... . ......... .......
-
-	signer, err := ssh.ParsePrivateKey(key)
-	if err != nil {
-	    t.Fatalf("Unable to parse private key: %v", err)
-	}
-
-........... .......... signer ........ .......... ......
-
-	sshConfig := &ssh.ClientConfig{
-	    User: "ubuntu",
-	    Auth: []ssh.AuthMethod{
-		ssh.PublicKeys(signer),
-	    },
-	    HostKeyCallback: ssh.InsecureIgnoreHostKey(),
-	}
-
-........... ............ ........... - ... ..... ......, . ..... ...... ...... ....... . ........... .......
-
-	sshConnection, err := ssh.Dial("tcp", fmt.Sprintf("%s:22", vmLinuxPublicIPAddress), sshConfig)
-	if err != nil {
-	    t.Fatalf("Cannot establish SSH connection to vm-linux public IP address: %v", err)
-	}
-
-	defer sshConnection.Close()
-        
-	sshSession, err := sshConnection.NewSession()
-	if err != nil {
-	    t.Fatalf("Cannot create SSH session to vm-linux public IP address: %v", err)
-	}
-
-	defer sshSession.Close()
-
-........ ............ .. ssh . ........... ....... . .. ........ ......... .......... (... defer)!
-
-	err = sshSession.Run(fmt.Sprintf("ping -c 1 8.8.8.8"))
-	if err != nil {
-	    t.Fatalf("Cannot ping 8.8.8.8: %v", err)
-	}
-
-.. . ..... .... .. ......, ........ ...-...... ............ . ........... .......
-
-. . imports ........... ... .... .......... - "golang.org/x/crypto/ssh"
-
-....., ......... ... end2end_test.go .........:
-
-package test
-
-import (
-    "fmt"
-    "io/ioutil"
-    "flag"
-    "testing"
-
-    "github.com/gruntwork-io/terratest/modules/terraform"
-    test_structure "github.com/gruntwork-io/terratest/modules/test-structure"
-    "golang.org/x/crypto/ssh"
-)
-
-var folder = flag.String("folder", "", "Folder ID in Yandex.Cloud")
-var sshKeyPath = flag.String("ssh-key-pass", "", "Private ssh key for access to virtual machines")
-
-func TestEndToEndDeploymentScenario(t *testing.T) {
-    fixtureFolder := "../"
-
-    test_structure.RunTestStage(t, "setup", func() {
-	terraformOptions := &terraform.Options{
-	    TerraformDir: fixtureFolder,
-
-	    Vars: map[string]interface{}{
-	    "yc_folder":    *folder,
-	    },
-        }
-
-	test_structure.SaveTerraformOptions(t, fixtureFolder, terraformOptions)
-
-	terraform.InitAndApply(t, terraformOptions)
-    })
-
-    test_structure.RunTestStage(t, "validate", func() {
-        fmt.Println("Run some tests...")
-
-        terraformOptions := test_structure.LoadTerraformOptions(t, fixtureFolder)
-
-        // test load balancer ip existing
-        loadbalancerIPAddress := terraform.Output(t, terraformOptions, "load_balancer_public_ip")
-
-        if loadbalancerIPAddress == "" {
-	    t.Fatal("Cannot retrieve the public IP address value for the load balancer.")
-	}
-
-	// test ssh connect
-	vmLinuxPublicIPAddress := terraform.Output(t, terraformOptions, "vm_linux_public_ip_address")
-
-	key, err := ioutil.ReadFile(*sshKeyPath)
-	if err != nil {
-	    t.Fatalf("Unable to read private key: %v", err)
-	}
-
-	signer, err := ssh.ParsePrivateKey(key)
-	if err != nil {
-	    t.Fatalf("Unable to parse private key: %v", err)
-	}
-
-	sshConfig := &ssh.ClientConfig{
-	    User: "ubuntu",
-	    Auth: []ssh.AuthMethod{
-		ssh.PublicKeys(signer),
-	    },
-	    HostKeyCallback: ssh.InsecureIgnoreHostKey(),
-	}
-
-	sshConnection, err := ssh.Dial("tcp", fmt.Sprintf("%s:22", vmLinuxPublicIPAddress), sshConfig)
-	if err != nil {
-	    t.Fatalf("Cannot establish SSH connection to vm-linux public IP address: %v", err)
-	}
-
-	defer sshConnection.Close()
-
-	sshSession, err := sshConnection.NewSession()
-	if err != nil {
-	    t.Fatalf("Cannot create SSH session to vm-linux public IP address: %v", err)
-	}
-
-	defer sshSession.Close()
-
-	err = sshSession.Run(fmt.Sprintf("ping -c 1 8.8.8.8"))
-	if err != nil {
-	    t.Fatalf("Cannot ping 8.8.8.8: %v", err)
-	}
-    })
-
-    test_structure.RunTestStage(t, "teardown", func() {
-	terraformOptions := test_structure.LoadTerraformOptions(t, fixtureFolder)
-	terraform.Destroy(t, terraformOptions)
-    })
-}
-
-... ... .. ........ ..... .........., .. .. ........ .........
-
-. go mod vendor
-
-..... ......... ...., . ........ ........ .. .............. .... - -ssh-key-pass
-
-. go test -v ./ -timeout 30m -folder 'b1guvpc4h7oehnd9pabt' -ssh-key-pass '/Users/igor/.ssh/yc'
-
-=== RUN   TestEndToEndDeploymentScenario
-TestEndToEndDeploymentScenario 2021-09-10T23:30:46+03:00 test_structure.go:29: The 'SKIP_setup' environment variable is set, so skipping stage 'setup'.
-TestEndToEndDeploymentScenario 2021-09-10T23:30:46+03:00 test_structure.go:26: The 'SKIP_validate' environment variable is not set, so executing stage 'validate'.
-Run some tests...
-TestEndToEndDeploymentScenario 2021-09-10T23:30:46+03:00 save_test_data.go:215: Loading test data from ../.test-data/TerraformOptions.json
-TestEndToEndDeploymentScenario 2021-09-10T23:30:46+03:00 retry.go:91: terraform [output -no-color -json load_balancer_public_ip]
-TestEndToEndDeploymentScenario 2021-09-10T23:30:46+03:00 logger.go:66: Running command terraform with args [output -no-color -json load_balancer_public_ip]
-TestEndToEndDeploymentScenario 2021-09-10T23:30:47+03:00 logger.go:66: "130.193.34.29"
-TestEndToEndDeploymentScenario 2021-09-10T23:30:47+03:00 retry.go:91: terraform [output -no-color -json vm_linux_public_ip_address]
-TestEndToEndDeploymentScenario 2021-09-10T23:30:47+03:00 logger.go:66: Running command terraform with args [output -no-color -json vm_linux_public_ip_address]
-TestEndToEndDeploymentScenario 2021-09-10T23:30:47+03:00 logger.go:66: "84.201.159.187"
-TestEndToEndDeploymentScenario 2021-09-10T23:30:47+03:00 test_structure.go:29: The 'SKIP_teardown' environment variable is set, so skipping stage 'teardown'.
---- PASS: TestEndToEndDeploymentScenario (1.34s)
-PASS
-ok  	test	1.772s
-
-... ..... ...... ........
+[wp_app]
+app ansible_host=62.84.112.16
+app2 ansible_host=62.84.121.247
 
 ....... .. ..........
 
-......... ..... ......... ....... . .... .......
+........... ............ ......... ...... ....... ........ IP ...... . ......... .......
 
-. ......, ........ ...... .... ........... .... .......
+....., ... .... ....... .... . .......... ........... ... ...... ...... wp_app . ........ environments/prod/group_vars
 
-....... ...... .... ....... ...............
+.......... FQDN ... ..... .... ...... .. ....... ... ...... .......... .. .............: https://cloud.yandex.com/en-ru/docs/managed-mysql/operations/connect#fqdn-master
+ID ........ MySQL ..... ..... ...-....... .............:
 
-... ..... ...... .......... ......... SKIP_teardown:
+... .... ......, ... ............ .... ...... . ... ...... .. ......... . ............... ......... ...........
 
-. unset SKIP_teardown
+wp_app
 
-..... ........ ..... . .. .... ... ..... .. .......... ..... ......... ........ ..............:
+wordpress_db_name: db
+wordpress_db_user: user
+wordpress_db_password: password
+wordpress_db_host: c-c9q304kesgmvb1raujqu.rw.mdb.yandexcloud.net
 
-. go test -v ./ -timeout 30m -folder 'b1guvpc4h7oehnd9pabt' -ssh-key-pass '/Users/igor/.ssh/yc'
+...... ..... .......... . ......... ........ ... ......... WordPress. ..... .. ......... ... . .....
 
-...... ...... .......... .......... ......... SKIP_
+. ........ playbooks ........ .... install.yml. . ... ....... ..... .......... . ......... ........... ............, ....... ........... WordPress-..
 
-. env | grep SKIP
-SKIP_setup=true
+install.yml
 
-. unset SKIP_setup
+- hosts: wp_app
+  become: yes
 
-. ........ ...... .... ............
+  tasks:
+    - name: Update apt-get repo and cache
+      apt: update_cache=yes force_apt_get=yes cache_valid_time=3600
 
-. go test -v ./ -timeout 30m -folder 'b1guvpc4h7oehnd9pabt' -ssh-key-pass '/Users/igor/.ssh/yc'
+    - name: install dependencies
+      package:
+        name:
+          - apache2
+          - ghostscript
+          - libapache2-mod-php
+          - mysql-server
+          - php
+          - php-bcmath
+          - php-curl
+          - php-imagick
+          - php-intl
+          - php-json
+          - php-mbstring
+          - php-mysql
+          - php-xml
+          - php-zip
+        state: present
 
+........ ........, ... . ..... ...... .. ......... ...... ...... .. ...... ........., ... ....... ..... ......... ......... . ...... ........ ......:
+
+- hosts: wp_app
+
+........ ....... . ........, ... ........... . ......... ...... ...... ....... . ......... ....... ...... ... .......:
+
+. ansible-playbook playbooks/install.yml
+
+PLAY [wp_app] *********************************************************************************************************************************
+
+TASK [Gathering Facts] ************************************************************************************************************************
+ok: [app]
+ok: [app2]
+
+TASK [Update apt-get repo and cache] **********************************************************************************************************
+changed: [app]
+changed: [app2]
+
+TASK [install dependencies] *******************************************************************************************************************
+changed: [app2]
+changed: [app]
+
+......... ... ... - ... ........ .. ...... ........, .... ..... ........... WordPress . .......... ............ WordPress . ................. . .... ........
+
+....... ......... .... . ... .......
+
+    - name: Create the installation directory
+      file:
+        path: /srv/www
+        owner: www-data
+        state: directory
+
+    - name: Install WordPress
+      unarchive:
+        src: https://wordpress.org/latest.tar.gz
+        dest: /srv/www
+        owner: www-data
+        remote_src: yes
+
+........ ........, ... . ...... file, ..... .... ............ ........, .. ............ ......... . ... ..... ... ........... .. ... ........ ........ owner.
+
+.. .......... . ................ ............ ........ .... ...... - unarchive.
+
+..... ... ... ......... ....... . ........., ... ..... .... ...... .. ........:
+
+. ansible-playbook playbooks/install.yml
+
+... ......... ... - .......... ........ ............ ..... ... ....... Apache2, ..... .......... .. 80-.. .... ...... ........... .. WordPress.
+
+. ...., . ...... ...... . ... .. ..... ............. ...-.. ...... . .....-............, .. ...-.... ..... .......... . ... ... . ......... .... .....-...... ..... ... ............ ............. ............... .... ......, .. ..... ..... ....... ...... .... ...., . ......... ........ ... .... .. ..... ..............
+
+...., . ........ templates ........ .... wordpress.conf.j2 .. ......... ..........:
+
+<VirtualHost *:80>
+    DocumentRoot /srv/www/wordpress
+    <Directory /srv/www/wordpress>
+        Options FollowSymLinks
+        AllowOverride Limit Options FileInfo
+        DirectoryIndex index.php
+        Require all granted
+    </Directory>
+    <Directory /srv/www/wordpress/wp-content>
+        Options FollowSymLinks
+        Require all granted
+    </Directory>
+</VirtualHost>
+
+..... ..... ........ ........ .. ......... .... . ..... - /srv/www/wordpress. ... .. ......., ....... /srv/www .. ......... ..... . .........
+
+. ...... ........... .... ..... ............ ...... . 80-.. ...... . ...... .. .... .... ..... .......... ...... ............., ....... .. ......... . .......... ..........
+
+<VirtualHost *:80>
+
+..... ...., ... .. ........... ... ............, ....... ... . .......:
+
+    - name: Copy file with owner and permissions
+      template:
+        src: ../templates/wordpress.conf.j2
+        dest: /etc/apache2/sites-available/wordpress.conf
+        owner: "www-data"
+
+..... .... ... . ............ Apache ......... ........ ...... ....., .......... ......... ... .............. .....:
+
+    ........ . Apache ...... rewrite
+    .............. ... ....
+    ................ ....-........ (.It Works.)
+
+...... . .......... ...... .. ..... ...... ... ...... ansible-...... apache2_module. ... ......... ..... ........ ............. ansible-...... shell.
+
+....... ..... ...... . .......:
+
+    - name: Enable URL rewriting
+      apache2_module:
+        name: rewrite
+        state: present
+
+    - name: Enable the site
+      shell: a2ensite wordpress
+
+    - name: Disable the default .It Works. site
+      shell: a2dissite 000-default
+
+    - name: Reload service apache2
+      service:
+        name: apache2
+        state: reloaded
+
+......... ......, ....... .... ...... . .... ........, ... .......... WordPress . .... ...... MySql.
+
+... ..... ... ........... .......... .. ..... ........ .......... ... .......... . ..... ...... .. SSL. . ... ..... ..... ...... ......... . ............ ... ...... WordPress.
+
+...... . ............ ........ ... . ........ files:
+
+. wget "https://storage.yandexcloud.net/cloud-certs/CA.pem" -O ./files/root.crt
+
+....., . ........ templates ........ .... wp-config.php.j2 .. ......... ..........:
+
+<?php
+/**
+ * The base configuration for WordPress
+ *
+ * The wp-config.php creation script uses this file during the installation.
+ * You don't have to use the web site, you can copy this file to "wp-config.php"
+ * and fill in the values.
+ *
+ * This file contains the following configurations:
+ *
+ * * MySQL settings
+ * * Secret keys
+ * * Database table prefix
+ * * ABSPATH
+ *
+ * @link https://wordpress.org/support/article/editing-wp-config-php/
+ *
+ * @package WordPress
+ */
+
+// ** MySQL settings - You can get this info from your web host ** //
+/** The name of the database for WordPress */
+define( 'DB_NAME', '{{ wordpress_db_name }}' );
+
+/** MySQL database username */
+define( 'DB_USER', '{{ wordpress_db_user }}' );
+
+/** MySQL database password */
+define( 'DB_PASSWORD', '{{ wordpress_db_password }}' );
+
+/** MySQL hostname */
+define( 'DB_HOST', '{{ wordpress_db_host }}' );
+
+/** Database charset to use in creating database tables. */
+define( 'DB_CHARSET', 'utf8' );
+
+/** The database collate type. Don't change this if in doubt. */
+define( 'DB_COLLATE', '' );
+
+/**#@+
+ * Authentication unique keys and salts.
+ *
+ * Change these to different unique phrases! You can generate these using
+ * the {@link https://api.wordpress.org/secret-key/1.1/salt/ WordPress.org secret-key service}.
+ *
+ * You can change these at any point in time to invalidate all existing cookies.
+ * This will force all users to have to log in again.
+ *
+ * @since 2.6.0
+ */
+define( 'AUTH_KEY',         'put your unique phrase here' );
+define( 'SECURE_AUTH_KEY',  'put your unique phrase here' );
+define( 'LOGGED_IN_KEY',    'put your unique phrase here' );
+define( 'NONCE_KEY',        'put your unique phrase here' );
+define( 'AUTH_SALT',        'put your unique phrase here' );
+define( 'SECURE_AUTH_SALT', 'put your unique phrase here' );
+define( 'LOGGED_IN_SALT',   'put your unique phrase here' );
+define( 'NONCE_SALT',       'put your unique phrase here' );
+
+/**#@-*/
+
+/**
+ * WordPress database table prefix.
+ *
+ * You can have multiple installations in one database if you give each
+ * a unique prefix. Only numbers, letters, and underscores please!
+ */
+$table_prefix = 'wp_';
+
+/**
+ * For developers: WordPress debugging mode.
+ *
+ * Change this to true to enable the display of notices during development.
+ * It is strongly recommended that plugin and theme developers use WP_DEBUG
+ * in their development environments.
+ *
+ * For information on other constants that can be used for debugging,
+ * visit the documentation.
+ *
+ * @link https://wordpress.org/support/article/debugging-in-wordpress/
+ */
+define( 'WP_DEBUG', true );
+define( 'WP_DEBUG_LOG', true );
+
+/* Add any custom values between this line and the "stop editing" line. */
+
+
+
+/* That's all, stop editing! Happy publishing. */
+
+/** Absolute path to the WordPress directory. */
+if ( ! defined( 'ABSPATH' ) ) {
+        define( 'ABSPATH', __DIR__ . '/' );
+}
+
+define('MYSQL_CLIENT_FLAGS', MYSQLI_CLIENT_SSL);
+
+/** Sets up WordPress vars and included files. */
+require_once ABSPATH . 'wp-settings.php';
+
+... ......, ... ... ....... ......, . ....... ..... ............. ........ .. ..........:
+
+    wordpress_db_name
+    wordpress_db_user
+    wordpress_db_password
+    wordpress_db_host
+
+... .. ......., ... ......... .......... .. ..... environments/prod/group_vars/wp_app
+
+..... ..... ..... ........ ........ .. ......... ......:
+
+define('MYSQL_CLIENT_FLAGS', MYSQLI_CLIENT_SSL);
+
+.... .......... .. ........ WordPress, ... ........... . .... ...... ..... .... .. SSL.
+
+....... ......... .... . ... .......:
+
+    - name: Install mysql cert
+      copy:
+        src: ../files/root.crt
+        dest: /usr/local/share/ca-certificates/root.crt
+
+    - name: Update cert index
+      shell: /usr/sbin/update-ca-certificates
+
+    - name: Configure WordPress
+      template:
+        src: ../templates/wp-config.php.j2
+        dest: "/srv/www/wordpress/wp-config.php"
+        owner: "www-data"
+
+..... .. ... ...... ...... copy ......... .. ..... ........ ...........
+
+..... ... ...... ...... shell ......... .. ...... ......... .............
+
+., ... ...... ...... template, . ....... .. ... ....... (.......... wordpress.conf.j2) ......... ............ . ............ . .... .......
+
+....., ...... ... ....... ...... ......... ...:
+
+- hosts: wp_app
+  become: yes
+
+  tasks:
+    - name: Update apt-get repo and cache
+      apt: update_cache=yes force_apt_get=yes cache_valid_time=3600
+
+    - name: install dependencies
+      package:
+        name:
+          - apache2
+          - ghostscript
+          - libapache2-mod-php
+          - mysql-server
+          - php
+          - php-bcmath
+          - php-curl
+          - php-imagick
+          - php-intl
+          - php-json
+          - php-mbstring
+          - php-mysql
+          - php-xml
+          - php-zip
+        state: present
+
+    - name: Create the installation directory
+      file:
+        path: /srv/www
+        owner: www-data
+        state: directory
+
+    - name: Install WordPress
+      unarchive:
+        src: https://wordpress.org/latest.tar.gz
+        dest: /srv/www
+        owner: www-data
+        remote_src: yes
+
+    - name: Copy file with owner and permissions
+      copy:
+        src: ../templates/wordpress.conf.j2
+        dest: /etc/apache2/sites-available/wordpress.conf
+
+    - name: Enable URL rewriting
+      apache2_module:
+        name: rewrite
+        state: present
+
+    - name: Enable the site
+      shell: a2ensite wordpress
+
+    - name: Disable the default .It Works. site
+      shell: a2dissite 000-default
+
+    - name: Reload service apache2
+      service:
+        name: apache2
+        state: reloaded
+
+    - name: Install mysql cert
+      copy:
+        src: ../files/root.crt
+        dest: /usr/local/share/ca-certificates/root.crt
+
+    - name: Update cert index
+      shell: /usr/sbin/update-ca-certificates
+
+    - name: Configure WordPress
+      template:
+        src: ../templates/wp-config.php.j2
+        dest: "/srv/www/wordpress/wp-config.php"
+        owner: "www-data"
+
+........ ....... ... ...
+
+. ansible-playbook playbooks/install.yml
+
+. ......... ....... ........ . ........ ......... . IP .............. (... ..... ..... . output-.......... ... . ...-....... .............).
+
+.. ...... ...... ....... ........:
+
+........... WordPress .... ... ..............
+.............. ........ . ....
+
+...., ...... ..... ...... ........ ...... - .. ...... .............. ........ ....... .....
+
+.......... ......... .........:
+
+. mkdir roles/wordpress
+. mkdir roles/wordpress/default
+. mkdir roles/wordpress/files
+. mkdir roles/wordpress/meta
+. mkdir roles/wordpress/tasks
+. mkdir roles/wordpress/templates
+
+.........., ....... ... .........., ...... . ..... defaults/main.yml . ...... ..... ........... .........
+
+........ .. ........ .......... ........ . ........ ......... ...........
+
+wordpress_db_name: "mysql_db_name"
+wordpress_db_user: "mysql_username"
+wordpress_db_password: "mysql_user_password"
+wordpress_db_host: "mysql_fqdn"
+
+. ..... meta/main.yml ...... ..... ........ . ..... ....
+
+---
+galaxy_info:
+  role_name: wordpress
+  author: sablin
+  description: Wordpress CMS System
+  license: "license (MIT)"
+
+  min_ansible_version: 2.9
+
+  galaxy_tags:
+    - linux
+    - server
+    - web
+    - wordpress
+    - cms
+
+  platforms:
+    - name: Ubuntu
+      versions:
+        - Focal
+
+....., . ....... .... files ......... ........ ...........
+
+. . ....... .... templates ......... ....... wordpress.conf.j2 . wp-config.php.j2.
+
+. ... ........ ......... .... ........ . .... tasks/main.yml.
+
+main.yml
+
+---
+- name: Update apt-get repo and cache
+  apt: update_cache=yes force_apt_get=yes cache_valid_time=3600
+
+- name: install dependencies
+  package:
+    name:
+      - apache2
+      - ghostscript
+      - libapache2-mod-php
+      - mysql-server
+      - php
+      - php-bcmath
+      - php-curl
+      - php-imagick
+      - php-intl
+      - php-json
+      - php-mbstring
+      - php-mysql
+      - php-xml
+      - php-zip
+    state: present
+
+- name: Create the installation directory
+  file:
+    path: /srv/www
+    owner: www-data
+    state: directory
+
+- name: Install WordPress
+  unarchive:
+    src: https://wordpress.org/latest.tar.gz
+    dest: /srv/www
+    owner: www-data
+    remote_src: yes
+
+- name: Copy file with owner and permissions
+  template:
+    src: wordpress.conf.j2
+    dest: /etc/apache2/sites-available/wordpress.conf
+
+- name: Enable URL rewriting
+  apache2_module:
+    name: rewrite
+    state: present
+
+- name: Enable the site
+  shell: a2ensite wordpress
+
+- name: Disable the default .It Works. site
+  shell: a2dissite 000-default
+
+- name: Reload service apache2
+  service:
+    name: apache2
+    state: reloaded
+
+- name: Install mysql cert
+  copy:
+    src: ./files/root.crt
+    dest: /usr/local/share/ca-certificates/root.crt
+
+- name: Update cert index
+  shell: /usr/sbin/update-ca-certificates
+
+- name: Configure WordPress
+  template:
+    src: wp-config.php.j2
+    dest: "/srv/www/wordpress/wp-config.php"
+    owner: "www-data"
+
+....., ......... ......... .... ...... ......... ...:
+
+. tree
+.
+... wordpress
+    ... defaults
+    .   ... main.yml
+    ... files
+    .   ... root.crt
+    ... meta
+    .   ... main.yml
+    ... tasks
+    .   ... main.yml
+    ... templates
+        ... wordpress.conf.j2
+        ... wp-config.php.j2
+
+........ ....... ...... ..... ......... ......... .......:
+
+- hosts: wp_app
+  become: yes
+
+  roles:
+    - role: wordpress
+
+... ... .. ..... ...... - ... ........ ............... .....
+
+........ ... ... ......., ..... ........., ... ...... .. .........:
+
+. ansible-playbook playbooks/install.yml
+
+.... ....... ......... ... ......, .. ...... ..... ...... .. .... . ......... ... .........:
+
+........, ... ......., .... .......... . ....... .. Continue.
+
+..... ......... My site, Username, Password (... ........ ... ............ . ...... - ... .............. ....., ... .. ............ .... ......), Your Email . ....... .. Install WordPress.
+
+..... ......... ..... ........ ........., ... ......... .........:
+
+. ..... ....... .. Log in. ..... ...., ..... ..... . ...... .............. ....., .. ........ . ... .......:
+
+....... . ....... ..... .... .. ...... My site, .. ....... .. ........ ........ WordPress.
+
+. ...... ..... ..... ....... . ........ ansible ...... ........ - files . templates, ... ... ... ........... ... ......... . .... wordpress.
+
+........ ......... ........ ansible ...... ......... ...:
+
+. tree
+.
+... ansible.cfg
+... environments
+.   ... prod
+.       ... group_vars
+.       .   ... wp_app
+.       ... inventory
+... playbooks
+.   ... install.yml
+... roles
+    ... wordpress
+        ... defaults
+        .   ... main.yml
+        ... files
+        .   ... root.crt
+        ... meta
+        .   ... main.yml
+        ... tasks
+        .   ... main.yml
+        ... templates
+            ... wordpress.conf.j2
+            ... wp-config.php.j2
+
+........ ........... .....
+
+............ . ........ .......... ..... . ............. .. ... WordPress .. ...... ........., ... .... ..... ........ .... ........ .... .. .... .....
 ........ ..
 
-... ........ .. .......... ............ ...... .. ........ ........... . ........... .......... . ......... . ........
+... ........ .. .......... ............ IP .............., ... ......... . ........ ........... .... WordPress.
 
 . ........... ...... ......... .... README.md . ......... ........... .......
 
-............. .......... ......... . .. ... ....... .......... .............
+............. .......... ......... . .. .... ....... ........
 Last changed by  
 .
 Otus
-
-7
+·
+0
 Published on HackMD
